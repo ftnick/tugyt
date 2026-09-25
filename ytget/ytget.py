@@ -25,7 +25,7 @@ except ImportError as error:  # pragma: no cover
     yt_dlp = None
     _YT_DLP_IMPORT_ERROR = error
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "ftnick"
 __license__ = "MIT"
 
