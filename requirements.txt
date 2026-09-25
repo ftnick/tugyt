@@ -1,3 +1,2 @@
-yt-dlp
-setuptools
-rich
+yt-dlp==2025.1.26
+rich==15.0.0
