@@ -32,7 +32,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          version="$(python -c 'import re; print(re.search(r"__version__ = \"(.+?)\"", open("ytget/ytget.py", encoding="utf-8").read()).group(1))')"
+          version="$(python -c 'import re; print(re.search(r"__version__ = \"(.+?)\"", open("ytpull/ytpull.py", encoding="utf-8").read()).group(1))')"
           tag="v${version}"
           previous_tag="$(git tag --list 'v*' --sort=-version:refname | head -n 1)"
 
@@ -68,31 +68,31 @@ jobs:
           python -m pip install . pyinstaller
 
       - name: Build executable
-        run: pyinstaller ytget.spec
+        run: pyinstaller ytpull.spec
 
       - name: Smoke test executable on Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          & .\dist\ytget.exe --version
+          & .\dist\ytpull.exe --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & .\dist\ytget.exe --help | Out-Null
+          & .\dist\ytpull.exe --help | Out-Null
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Compress-Archive -Path .\dist\* -DestinationPath "ytget-${{ matrix.os }}-v${{ needs.check-version.outputs.version }}.zip"
+          Compress-Archive -Path .\dist\* -DestinationPath "ytpull-${{ matrix.os }}-v${{ needs.check-version.outputs.version }}.zip"
 
       - name: Smoke test executable on Unix
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          ./dist/ytget --version
-          ./dist/ytget --help > /dev/null
-          (cd dist && zip -r "../ytget-${{ matrix.os }}-v${{ needs.check-version.outputs.version }}.zip" .)
+          ./dist/ytpull --version
+          ./dist/ytpull --help > /dev/null
+          (cd dist && zip -r "../ytpull-${{ matrix.os }}-v${{ needs.check-version.outputs.version }}.zip" .)
 
       - name: Store GitHub artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.os }}
-          path: ytget-*.zip
+          path: ytpull-*.zip
 
   release:
     needs: [check-version, build]
@@ -134,5 +134,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "v${{ needs.check-version.outputs.version }}" release-dists/*.zip \
-            --title "ytget v${{ needs.check-version.outputs.version }}" \
+            --title "ytpull v${{ needs.check-version.outputs.version }}" \
             --notes-file release-notes.md
