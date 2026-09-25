@@ -3,9 +3,14 @@ name: Package with PyInstaller
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -28,6 +33,22 @@ jobs:
 
       - name: Build with PyInstaller
         run: pyinstaller ytget.spec
+
+      - name: Smoke test executable on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & .\dist\ytget.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & .\dist\ytget.exe --help | Out-Null
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Smoke test executable on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          ./dist/ytget --version
+          ./dist/ytget --help > /dev/null
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
