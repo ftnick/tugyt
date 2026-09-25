@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ytget"
+version = "0.1.0"
+description = "A focused YouTube downloader powered by yt-dlp."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "ftnick" }]
+dependencies = [
+    "yt-dlp==2025.1.26",
+    "rich==15.0.0",
+]
+
+[project.scripts]
+ytget = "ytget.ytget:cli"
+
+[tool.setuptools.packages.find]
+include = ["ytget*"]

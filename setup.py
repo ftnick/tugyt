@@ -1,33 +1,4 @@
-import re
-import setuptools
-from distutils.util import convert_path
+from setuptools import setup
 
 
-with open("README.md", "r", encoding="utf8") as description_file:
-    long_description = description_file.read()
-
-with open("requirements.txt", "r") as requirements_file:
-    requirements = requirements_file.read().split("\n")
-
-ver_path = convert_path("ytget/ytget.py")
-with open(ver_path, encoding="utf8") as ver_file:
-    version = re.search(r'__version__ = "(.+)"', ver_file.read()).group(1)
-
-setuptools.setup(
-    name="ytget",
-    version=version,
-    author="ftnick",
-    description="A focused YouTube downloader powered by yt-dlp.",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/ftnick/ytget",
-    license="MIT",
-    packages=["ytget"],
-    install_requires=requirements,
-    python_requires=">=3.9",
-    entry_points={
-        "console_scripts": [
-            "ytget=ytget.ytget:cli"
-        ]
-    }
-)
+setup()
