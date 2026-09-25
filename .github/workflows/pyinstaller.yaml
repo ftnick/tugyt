@@ -1,9 +1,7 @@
-name: Package with PyInstaller
+name: Release packages
 
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -11,7 +9,42 @@ permissions:
   contents: read
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      previous_tag: ${{ steps.version.outputs.previous_tag }}
+      should_release: ${{ steps.version.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check package version
+        id: version
+        shell: bash
+        run: |
+          version="$(python -c 'import re; print(re.search(r"__version__ = \"(.+?)\"", open("ytget/ytget.py", encoding="utf-8").read()).group(1))')"
+          tag="v${version}"
+          previous_tag="$(git tag --list 'v*' --sort=-version:refname | head -n 1)"
+
+          if git rev-parse --verify --quiet "refs/tags/${tag}"; then
+            should_release=false
+          else
+            should_release=true
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "previous_tag=${previous_tag}" >> "$GITHUB_OUTPUT"
+          echo "should_release=${should_release}" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -21,19 +54,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
 
       - name: Install requirements
-        run: python -m pip install --upgrade pip
-      - run: python -m pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller
 
-      - name: Install PyInstaller
-        run: python -m pip install pyinstaller
-
-      - name: Build with PyInstaller
+      - name: Build executable
         run: pyinstaller ytget.spec
 
       - name: Smoke test executable on Windows
@@ -44,6 +74,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & .\dist\ytget.exe --help | Out-Null
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Compress-Archive -Path .\dist\* -DestinationPath "ytget-${{ matrix.os }}-v${{ needs.check-version.outputs.version }}.zip"
 
       - name: Smoke test executable on Unix
         if: runner.os != 'Windows'
@@ -51,9 +82,53 @@ jobs:
         run: |
           ./dist/ytget --version
           ./dist/ytget --help > /dev/null
+          zip -r "ytget-${{ matrix.os }}-v${{ needs.check-version.outputs.version }}.zip" dist
 
-      - name: Upload build artifact
+      - name: Upload platform package
         uses: actions/upload-artifact@v4
         with:
-          name: ytget-${{ runner.os }}
-          path: dist/
+          name: release-${{ matrix.os }}
+          path: ytget-*.zip
+
+  release:
+    needs: [check-version, build]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download platform packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release-dists
+          merge-multiple: true
+
+      - name: Create release notes
+        shell: bash
+        env:
+          PREVIOUS_TAG: ${{ needs.check-version.outputs.previous_tag }}
+        run: |
+          if [ -n "$PREVIOUS_TAG" ]; then
+            git_range="${PREVIOUS_TAG}..HEAD"
+          else
+            git_range="HEAD"
+          fi
+
+          {
+            echo "# Changes"
+            echo
+            git log --pretty=format:'- %s (%h)' "$git_range"
+          } > release-notes.md
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ needs.check-version.outputs.version }}" release-dists/*.zip \
+            --title "ytget v${{ needs.check-version.outputs.version }}" \
+            --notes-file release-notes.md

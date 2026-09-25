@@ -8,7 +8,8 @@ dynamic = ["version"]
 description = "A focused YouTube downloader powered by yt-dlp."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "ftnick" }]
 dependencies = [
     "yt-dlp==2026.8.19",
