@@ -182,6 +182,21 @@ def test_main_quiet_mode_does_not_register_progress_hook():
     assert "progress_hooks" not in options
 
 
+def test_main_parses_fresh_arguments_for_each_call(monkeypatch):
+    first_args = app.create_parser().parse_args(["https://example.test/first"])
+    second_args = app.create_parser().parse_args(["https://example.test/second"])
+    parsed_args = iter([first_args, second_args])
+    monkeypatch.setattr(app.cmdl_parser, "parse_args", lambda: next(parsed_args))
+
+    assert app.main() == 0
+    assert app.main() == 0
+
+    assert [instance.urls for instance in FakeDownloader.instances] == [
+        ["https://example.test/first"],
+        ["https://example.test/second"],
+    ]
+
+
 def test_main_translates_downloader_error():
     FakeDownloader.error = FakeYtdlp.utils.DownloadError
     args = app.create_parser().parse_args(["https://example.test/video"])

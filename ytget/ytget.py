@@ -196,7 +196,11 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("-f", "--format", default="bv*+ba/b",
                         help="yt-dlp format selector (default: bv*+ba/b)")
     parser.add_argument("-x", "--extract-audio", action="store_true", help="extract audio with ffmpeg")
-    parser.add_argument("--audio-format", choices=("best", "aac", "flac", "mp3", "m4a", "opus", "vorbis", "wav"), default="mp3")
+    parser.add_argument(
+        "--audio-format",
+        choices=("best", "aac", "flac", "mp3", "m4a", "opus", "vorbis", "wav"),
+        default="mp3",
+    )
     parser.add_argument("--audio-quality", default="192K", help="audio bitrate passed to ffmpeg")
     parser.add_argument("-F", "--list-formats", action="store_true", help="list available formats without downloading")
     parser.add_argument("--dump-json", action="store_true", help="print metadata as JSON")
@@ -230,14 +234,11 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 cmdl_parser = create_parser()
-_CMDL_OPTS: Optional[argparse.Namespace] = None
 
 
 def main(args: Optional[argparse.Namespace] = None) -> int:
     """Download all supplied URLs and return a process exit code."""
-    global _CMDL_OPTS
-    args = args or _CMDL_OPTS or cmdl_parser.parse_args()
-    _CMDL_OPTS = args
+    args = args or cmdl_parser.parse_args()
     if yt_dlp is None:
         raise DownloadError("yt-dlp is not installed. Run `python -m pip install yt-dlp`.") from _YT_DLP_IMPORT_ERROR
     urls = _read_inputs(args.input)
