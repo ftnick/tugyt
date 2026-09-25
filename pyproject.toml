@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ytget"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A focused YouTube downloader powered by yt-dlp."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,3 +20,6 @@ ytget = "ytget.ytget:cli"
 
 [tool.setuptools.packages.find]
 include = ["ytget*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "ytget.ytget.__version__" }
