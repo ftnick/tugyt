@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -61,7 +65,7 @@ jobs:
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt pyinstaller
+          python -m pip install . pyinstaller
 
       - name: Build executable
         run: pyinstaller ytget.spec
@@ -82,7 +86,7 @@ jobs:
         run: |
           ./dist/ytget --version
           ./dist/ytget --help > /dev/null
-          zip -r "ytget-${{ matrix.os }}-v${{ needs.check-version.outputs.version }}.zip" dist
+          (cd dist && zip -r "../ytget-${{ matrix.os }}-v${{ needs.check-version.outputs.version }}.zip" .)
 
       - name: Store GitHub artifact
         uses: actions/upload-artifact@v4
