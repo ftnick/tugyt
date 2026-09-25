@@ -7,11 +7,11 @@ name = "ytget"
 version = "0.1.0"
 description = "A focused YouTube downloader powered by yt-dlp."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "ftnick" }]
 dependencies = [
-    "yt-dlp==2025.1.26",
+    "yt-dlp==2026.8.19",
     "rich==15.0.0",
 ]
 
