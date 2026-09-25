@@ -6,7 +6,10 @@ import ytget.ytget as app
 
 
 class FakeProgress:
+    entered = 0
+
     def __enter__(self):
+        self.__class__.entered += 1
         return self
 
     def __exit__(self, exception_type, exception, traceback):
@@ -51,6 +54,7 @@ def reset_fake_downloader(monkeypatch):
     FakeDownloader.instances = []
     FakeDownloader.result = 0
     FakeDownloader.error = None
+    FakeProgress.entered = 0
     monkeypatch.setattr(app, "yt_dlp", FakeYtdlp)
     monkeypatch.setattr(app, "DownloadProgress", FakeProgress)
 
@@ -178,6 +182,7 @@ def test_main_quiet_mode_does_not_register_progress_hook():
     assert app.main(args) == 0
 
     options = FakeDownloader.instances[0].options
+    assert FakeProgress.entered == 0
     assert "noprogress" not in options
     assert "progress_hooks" not in options
 

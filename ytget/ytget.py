@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any, Iterable, List, Optional
 
@@ -246,9 +247,11 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
         raise DownloadError("No URLs were found in the supplied input.")
     yt_dlp_module: Any = yt_dlp
     try:
-        with DownloadProgress() as progress:
+        progress_context = nullcontext() if args.quiet else DownloadProgress()
+        with progress_context as progress:
             options = build_options(args)
             if not args.quiet:
+                assert progress is not None
                 options["noprogress"] = True
                 options["progress_hooks"] = [progress.update]
             with yt_dlp_module.YoutubeDL(options) as downloader:
