@@ -1,7 +1,6 @@
 <p align="center">
   <img src="icon.ico" width="160">
 </p>
-
 <p align="center">
   <sub>Fetch (icon) by <a href="https://thenounproject.com/browse/icons/term/fetch/" target="_blank" title="highlight Icons">Gregor Cresnar</a> from <a href="https://thenounproject.com/browse/icons/term/fetch/" target="_blank" title="highlight Icons">Noun Project</a> (CC BY 3.0)</sub>
 </p>
@@ -20,5 +19,3 @@
   <a href="https://github.com/ftnick/ytget/blob/main/LICENSE"><img src="https://img.shields.io/github/license/ftnick/ytget" alt="License"></a>
   <a href="https://github.com/ftnick/ytget/commits/main"><img src="https://img.shields.io/github/last-commit/ftnick/ytget" alt="Last commit"></a>
 </p>
-
-<!-- work in progress -->

@@ -84,7 +84,7 @@ jobs:
           ./dist/ytget --help > /dev/null
           zip -r "ytget-${{ matrix.os }}-v${{ needs.check-version.outputs.version }}.zip" dist
 
-      - name: Upload platform package
+      - name: Store GitHub artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.os }}
@@ -101,7 +101,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download platform packages
+      - name: Download GitHub artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: release-*
