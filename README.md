@@ -13,6 +13,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/ftnick/ytget/actions/workflows/python-package.yml"><img src="https://github.com/ftnick/ytget/actions/workflows/python-package.yml/badge.svg" alt="CI"></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/ftnick/ytget/blob/main/LICENSE"><img src="https://img.shields.io/github/license/ftnick/ytget" alt="License"></a>
   <a href="https://github.com/ftnick/ytget/commits/main"><img src="https://img.shields.io/github/last-commit/ftnick/ytget" alt="Last commit"></a>
 </p>
