@@ -113,3 +113,6 @@ ENV/
 
 # Logs
 *.log
+
+# Agent instructions
+AGENTS.md
