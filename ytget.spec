@@ -21,6 +21,7 @@ exe = EXE(
     a.datas,
     [],
     name='ytget',
+    icon='icon.ico',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
