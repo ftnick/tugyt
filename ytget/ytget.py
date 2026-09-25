@@ -122,6 +122,11 @@ def _add_optional(options: dict, key: str, value: Any) -> None:
         options[key] = value
 
 
+def _normalize_subtitle_languages(value: str) -> List[str]:
+    """Convert yt-dlp's CLI all-languages alias to its API regex form."""
+    return [".*" if language == "all" else language for language in value.split(",")]
+
+
 def build_options(args: argparse.Namespace) -> dict:
     """Translate CLI arguments into yt-dlp options."""
     options = {
@@ -156,7 +161,7 @@ def build_options(args: argparse.Namespace) -> dict:
     _add_optional(options, "proxy", args.proxy)
     _add_optional(options, "ratelimit", args.rate_limit)
     _add_optional(options, "download_archive", args.download_archive)
-    _add_optional(options, "subtitleslangs", args.sub_langs)
+    _add_optional(options, "subtitleslangs", _normalize_subtitle_languages(args.sub_langs))
     _add_optional(options, "subtitlesformat", args.sub_format)
     if args.extract_audio:
         options["postprocessors"] = [{
