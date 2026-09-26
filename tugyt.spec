@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['ytpull.py'],
+    ['tugyt.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -20,7 +20,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='ytpull',
+    name='tugyt',
     icon='icon.ico',
     debug=False,
     bootloader_ignore_signals=False,

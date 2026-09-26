@@ -25,11 +25,11 @@ except ImportError as error:  # pragma: no cover
     yt_dlp = None
     _YT_DLP_IMPORT_ERROR = error
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __author__ = "ftnick"
 __license__ = "MIT"
 
-MODULE_NAME = "ytpull"
+MODULE_NAME = "tugyt"
 DEFAULT_OUTPUT = "%(title)s [%(id)s].%(ext)s"
 logger = logging.getLogger(MODULE_NAME)
 
@@ -274,7 +274,7 @@ def cli() -> None:
         print("\nInterrupted.", file=sys.stderr)
         raise SystemExit(130)
     except DownloadError as error:
-        print(f"ytpull: {error}", file=sys.stderr)
+        print(f"tugyt: {error}", file=sys.stderr)
         raise SystemExit(1)
 
 

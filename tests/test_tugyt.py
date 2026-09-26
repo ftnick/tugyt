@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 
-import ytpull.ytpull as app
+import tugyt.tugyt as app
 
 
 class FakeProgress:
@@ -264,4 +264,4 @@ def test_cli_reports_download_errors(monkeypatch, capsys):
         app.cli()
 
     assert error.value.code == 1
-    assert capsys.readouterr().err.endswith("ytpull: bad input\n")
+    assert capsys.readouterr().err.endswith("tugyt: bad input\n")
