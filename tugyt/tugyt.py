@@ -162,6 +162,7 @@ def build_options(args: argparse.Namespace) -> dict:
     _add_optional(options, "proxy", args.proxy)
     _add_optional(options, "ratelimit", args.rate_limit)
     _add_optional(options, "download_archive", args.download_archive)
+    _add_optional(options, "remote_components", args.remote_components)
     _add_optional(options, "subtitleslangs", _normalize_subtitle_languages(args.sub_langs))
     _add_optional(options, "subtitlesformat", args.sub_format)
     if args.extract_audio:
@@ -222,6 +223,12 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--playlist-end", type=int, metavar="N", help="playlist item to stop at")
     parser.add_argument("--playlist-items", metavar="ITEMS", help="playlist items, e.g. 1,3,5-7")
     parser.add_argument("--download-archive", metavar="FILE", help="skip IDs already recorded in FILE")
+    parser.add_argument(
+        "--remote-components",
+        action="append",
+        choices=("ejs:github", "ejs:npm"),
+        help="download yt-dlp components such as the YouTube challenge solver",
+    )
     parser.add_argument("--sponsorblock-remove", metavar="CATEGORIES",
                         help="remove SponsorBlock categories, e.g. sponsor,intro")
     parser.add_argument("-y", "--proxy", help="HTTP/SOCKS proxy URL")
