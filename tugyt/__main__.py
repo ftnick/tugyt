@@ -1,3 +1,3 @@
-from .tugyt import cli
+from tugyt.tugyt import cli
 
 cli()
