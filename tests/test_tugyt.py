@@ -89,6 +89,46 @@ def test_parser_defaults_and_input():
     assert args.retries == 10
 
 
+def test_print_banner_uses_pyfiglet_and_shows_version(monkeypatch, capsys):
+    class FakeFiglet:
+        @staticmethod
+        def figlet_format(text, font):
+            assert text == app.MODULE_NAME
+            assert font == "standard"
+            return "ASCII BANNER\n"
+
+    monkeypatch.setattr(app, "pyfiglet", FakeFiglet)
+
+    app._print_banner()
+
+    assert capsys.readouterr().out == f"ASCII BANNER\n{app.__version__}\n"
+
+
+def test_print_banner_falls_back_to_version(monkeypatch, capsys):
+    monkeypatch.setattr(app, "pyfiglet", None)
+
+    app._print_banner()
+
+    assert capsys.readouterr().out == f"{app.__version__}\n"
+
+
+def test_print_banner_avoids_duplicate_version_for_version_option(monkeypatch, capsys):
+    class FakeFiglet:
+        @staticmethod
+        def figlet_format(text, font):
+            return "ASCII BANNER\n"
+
+    monkeypatch.setattr(app, "pyfiglet", FakeFiglet)
+
+    app._print_banner(show_version=False)
+
+    assert capsys.readouterr().out == "ASCII BANNER\n"
+
+
+def test_version_requested_detects_short_option_cluster():
+    assert app._version_requested(["-vq"]) is True
+
+
 def test_parser_rejects_quiet_and_verbose_together():
     with pytest.raises(SystemExit):
         app.create_parser().parse_args([
@@ -352,6 +392,7 @@ def test_cli_reports_download_errors(monkeypatch, capsys):
         raise app.DownloadError("bad input")
 
     monkeypatch.setattr(app, "main", fail_main)
+    monkeypatch.setattr(app, "pyfiglet", None)
     monkeypatch.setattr(
         app.cmdl_parser,
         "parse_args",
@@ -362,4 +403,6 @@ def test_cli_reports_download_errors(monkeypatch, capsys):
         app.cli()
 
     assert error.value.code == 1
-    assert capsys.readouterr().err.endswith("tugyt: bad input\n")
+    output = capsys.readouterr()
+    assert output.out == f"{app.__version__}\n"
+    assert output.err.endswith("tugyt: bad input\n")

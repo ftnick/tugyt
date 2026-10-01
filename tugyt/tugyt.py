@@ -15,6 +15,11 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
+try:
+    import pyfiglet
+except ImportError:  # pragma: no cover
+    pyfiglet = None
+
 _YT_DLP_IMPORT_ERROR: Optional[ImportError] = None
 
 try:
@@ -257,6 +262,24 @@ def create_parser() -> argparse.ArgumentParser:
 cmdl_parser = create_parser()
 
 
+def _version_requested(arguments: Iterable[str]) -> bool:
+    return any(
+        argument in ("-v", "--version")
+        or (argument.startswith("-") and not argument.startswith("--") and "v" in argument[1:])
+        for argument in arguments
+    )
+
+
+def _print_banner(show_version: bool = True) -> None:
+    if pyfiglet is not None:
+        try:
+            print(pyfiglet.figlet_format(MODULE_NAME, font="standard"), end="")
+        except (OSError, UnicodeError):
+            pass
+    if show_version:
+        print(__version__)
+
+
 def _configure_logging(args: argparse.Namespace) -> None:
     handlers: List[logging.Handler] = [logging.StreamHandler()]
     if args.log_file:
@@ -303,6 +326,8 @@ def execute(*args: str) -> int:
 
 
 def cli() -> None:
+    arguments = sys.argv[1:]
+    _print_banner(show_version=not _version_requested(arguments))
     args = cmdl_parser.parse_args()
     _configure_logging(args)
     try:
