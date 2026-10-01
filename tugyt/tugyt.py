@@ -40,8 +40,8 @@ class DownloadError(Exception):
 
 def _remove_log_prefix(message: str, level: str) -> str:
     prefix = f"{level}:"
-    if message.startswith(prefix):
-        return message[len(prefix):].lstrip()
+    while message.startswith(prefix):
+        message = message[len(prefix):].lstrip()
     return message
 
 

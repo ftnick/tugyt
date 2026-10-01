@@ -305,8 +305,8 @@ def test_logger_respects_quiet_mode(capsys, caplog):
 
     logger.debug("ordinary message")
     logger.info("info message")
-    logger.warning("WARNING: warning message")
-    logger.error("ERROR: error message")
+    logger.warning("WARNING: WARNING: warning message")
+    logger.error("ERROR: ERROR: error message")
 
     output = capsys.readouterr()
     assert output.out == ""
