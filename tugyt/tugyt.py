@@ -33,12 +33,23 @@ logger = logging.getLogger(MODULE_NAME)
 
 
 class DownloadError(Exception):
-    pass
+    def __init__(self, message: str, logged: bool = False):
+        super().__init__(message)
+        self.logged = logged
+
+
+def _remove_log_prefix(message: str, level: str) -> str:
+    prefix = f"{level}:"
+    if message.startswith(prefix):
+        return message[len(prefix):].lstrip()
+    return message
 
 
 class YtdlpLogger:
-    def __init__(self, quiet: bool = False):
+    def __init__(self, quiet: bool = False, verbose: bool = False):
         self.quiet = quiet
+        self.verbose = verbose
+        self.error_reported = False
 
     def debug(self, message: str) -> None:
         if message.startswith("[debug]"):
@@ -51,9 +62,15 @@ class YtdlpLogger:
             print(message)
 
     def warning(self, message: str) -> None:
-        logger.warning(message)
+        logger.warning(_remove_log_prefix(message, "WARNING"))
 
     def error(self, message: str) -> None:
+        self.error_reported = True
+        message = _remove_log_prefix(message, "ERROR")
+        if "\n" in message:
+            if self.verbose:
+                logger.debug("yt-dlp details:\n%s", message)
+            return
         logger.error(message)
 
 
@@ -135,7 +152,7 @@ def build_options(args: argparse.Namespace) -> dict:
         "retries": args.retries,
         "fragment_retries": args.retries,
         "concurrent_fragment_downloads": args.concurrent_fragments,
-        "logger": YtdlpLogger(args.quiet),
+        "logger": YtdlpLogger(args.quiet, args.verbose),
         "writethumbnail": args.write_thumbnail,
         "writeinfojson": args.write_info_json,
         "writedescription": args.write_description,
@@ -261,10 +278,11 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
         raise DownloadError("No URLs were found in the supplied input.")
     logger.debug("Starting download for %d input(s)", len(urls))
     yt_dlp_module: Any = yt_dlp
+    options = build_options(args)
+    download_logger = options["logger"]
     try:
         progress_context = nullcontext() if args.quiet else DownloadProgress()
         with progress_context as progress:
-            options = build_options(args)
             if not args.quiet:
                 assert progress is not None
                 options["noprogress"] = True
@@ -274,7 +292,10 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
                 logger.debug("Download completed with exit code %d", result)
                 return result
     except yt_dlp_module.utils.DownloadError as error:
-        raise DownloadError(str(error)) from error
+        message = _remove_log_prefix(str(error), "ERROR")
+        if not download_logger.error_reported:
+            logger.error(message)
+        raise DownloadError(message, logged=True) from error
 
 
 def execute(*args: str) -> int:
@@ -290,7 +311,8 @@ def cli() -> None:
         print("\nInterrupted.", file=sys.stderr)
         raise SystemExit(130)
     except DownloadError as error:
-        print(f"tugyt: {error}", file=sys.stderr)
+        if not error.logged:
+            print(f"tugyt: {error}", file=sys.stderr)
         raise SystemExit(1)
 
 

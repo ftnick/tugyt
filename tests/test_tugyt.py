@@ -262,8 +262,10 @@ def test_main_translates_downloader_error():
     FakeDownloader.error = FakeYtdlp.utils.DownloadError
     args = app.create_parser().parse_args(["https://example.test/video"])
 
-    with pytest.raises(app.DownloadError, match="download failed"):
+    with pytest.raises(app.DownloadError, match="download failed") as error:
         app.main(args)
+
+    assert error.value.logged is True
 
 
 def test_main_rejects_missing_dependency(monkeypatch):
@@ -303,8 +305,8 @@ def test_logger_respects_quiet_mode(capsys, caplog):
 
     logger.debug("ordinary message")
     logger.info("info message")
-    logger.warning("warning message")
-    logger.error("error message")
+    logger.warning("WARNING: warning message")
+    logger.error("ERROR: error message")
 
     output = capsys.readouterr()
     assert output.out == ""
@@ -312,6 +314,17 @@ def test_logger_respects_quiet_mode(capsys, caplog):
     assert [(record.levelname, record.message) for record in caplog.records] == [
         ("WARNING", "warning message"),
         ("ERROR", "error message"),
+    ]
+
+
+def test_logger_moves_traceback_details_to_verbose_logging(caplog):
+    caplog.set_level("DEBUG", logger=app.MODULE_NAME)
+    logger = app.YtdlpLogger(verbose=True)
+
+    logger.error("ERROR: bad input\n  File \"example.py\", line 1")
+
+    assert [(record.levelname, record.message) for record in caplog.records] == [
+        ("DEBUG", 'yt-dlp details:\nbad input\n  File "example.py", line 1'),
     ]
 
 
