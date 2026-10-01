@@ -1,5 +1,3 @@
-"""Command-line YouTube downloader powered by yt-dlp."""
-
 import argparse
 import logging
 import sys
@@ -35,12 +33,10 @@ logger = logging.getLogger(MODULE_NAME)
 
 
 class DownloadError(Exception):
-    """Raised when yt-dlp cannot complete a requested operation."""
+    pass
 
 
 class YtdlpLogger:
-    """Bridge yt-dlp messages into the standard logger and CLI output."""
-
     def __init__(self, quiet: bool = False):
         self.quiet = quiet
 
@@ -62,8 +58,6 @@ class YtdlpLogger:
 
 
 class DownloadProgress:
-    """Render yt-dlp download events as a single Rich progress display."""
-
     def __init__(self):
         self.progress = Progress(
             TextColumn("[progress.description]{task.description}"),
@@ -104,7 +98,6 @@ class DownloadProgress:
 
 
 def _read_inputs(inputs: Iterable[str]) -> List[str]:
-    """Expand text files into URLs while preserving command-line order."""
     expanded = []
     for value in inputs:
         path = Path(value).expanduser()
@@ -127,12 +120,10 @@ def _add_optional(options: dict, key: str, value: Any) -> None:
 
 
 def _normalize_subtitle_languages(value: str) -> List[str]:
-    """Convert yt-dlp's CLI all-languages alias to its API regex form."""
     return [".*" if language == "all" else language for language in value.split(",")]
 
 
 def build_options(args: argparse.Namespace) -> dict:
-    """Translate CLI arguments into yt-dlp options."""
     options = {
         "format": args.format,
         "outtmpl": args.output,
@@ -249,7 +240,6 @@ cmdl_parser = create_parser()
 
 
 def main(args: Optional[argparse.Namespace] = None) -> int:
-    """Download all supplied URLs and return a process exit code."""
     args = args or cmdl_parser.parse_args()
     if yt_dlp is None:
         raise DownloadError("yt-dlp is not installed. Run `python -m pip install yt-dlp`.") from _YT_DLP_IMPORT_ERROR
@@ -272,12 +262,10 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
 
 
 def execute(*args: str) -> int:
-    """Programmatic entrypoint compatible with the original package."""
     return main(cmdl_parser.parse_args(list(args)))
 
 
 def cli() -> None:
-    """Console-script entrypoint."""
     logging.basicConfig(level=logging.DEBUG if "--verbose" in sys.argv else logging.INFO)
     try:
         raise SystemExit(main())
