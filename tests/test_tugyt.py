@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 import pytest
@@ -296,7 +297,8 @@ def test_execute_passes_parsed_arguments_to_main(monkeypatch):
     assert captured["args"].quiet is True
 
 
-def test_logger_respects_quiet_mode(capsys):
+def test_logger_respects_quiet_mode(capsys, caplog):
+    caplog.set_level("DEBUG", logger=app.MODULE_NAME)
     logger = app.YtdlpLogger(quiet=True)
 
     logger.debug("ordinary message")
@@ -306,14 +308,42 @@ def test_logger_respects_quiet_mode(capsys):
 
     output = capsys.readouterr()
     assert output.out == ""
-    assert output.err == "WARNING: warning message\nERROR: error message\n"
+    assert output.err == ""
+    assert [(record.levelname, record.message) for record in caplog.records] == [
+        ("WARNING", "warning message"),
+        ("ERROR", "error message"),
+    ]
+
+
+def test_configure_logging_writes_file(tmp_path):
+    log_file = tmp_path / "tugyt.log"
+    args = app.create_parser().parse_args([
+        "https://example.test/video",
+        "--verbose",
+        "--log-file",
+        str(log_file),
+    ])
+
+    app._configure_logging(args)
+    app.logger.debug("debug details")
+    app.logger.warning("warning details")
+    logging.shutdown()
+
+    output = log_file.read_text(encoding="utf-8")
+    assert "DEBUG: debug details" in output
+    assert "WARNING: warning details" in output
 
 
 def test_cli_reports_download_errors(monkeypatch, capsys):
-    def fail_main():
+    def fail_main(args=None):
         raise app.DownloadError("bad input")
 
     monkeypatch.setattr(app, "main", fail_main)
+    monkeypatch.setattr(
+        app.cmdl_parser,
+        "parse_args",
+        lambda: app.create_parser().parse_args(["https://example.test/video"]),
+    )
 
     with pytest.raises(SystemExit) as error:
         app.cli()

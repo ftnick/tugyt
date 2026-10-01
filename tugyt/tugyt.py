@@ -51,10 +51,10 @@ class YtdlpLogger:
             print(message)
 
     def warning(self, message: str) -> None:
-        print(f"WARNING: {message}", file=sys.stderr)
+        logger.warning(message)
 
     def error(self, message: str) -> None:
-        print(f"ERROR: {message}", file=sys.stderr)
+        logger.error(message)
 
 
 class DownloadProgress:
@@ -184,6 +184,7 @@ def create_parser() -> argparse.ArgumentParser:
     output_group = parser.add_mutually_exclusive_group()
     output_group.add_argument("-q", "--quiet", action="store_true", help="suppress yt-dlp output")
     output_group.add_argument("--verbose", action="store_true", help="show yt-dlp debug output")
+    parser.add_argument("--log-file", metavar="FILE", help="write warnings and debug details to FILE")
     parser.add_argument("-k", "--keep-video", action="store_true",
                         help="keep the original downloaded fragments after merging")
     parser.add_argument("--ignore-errors", action="store_true", help="continue when an item fails")
@@ -239,6 +240,18 @@ def create_parser() -> argparse.ArgumentParser:
 cmdl_parser = create_parser()
 
 
+def _configure_logging(args: argparse.Namespace) -> None:
+    handlers: List[logging.Handler] = [logging.StreamHandler()]
+    if args.log_file:
+        handlers.append(logging.FileHandler(args.log_file, encoding="utf-8"))
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(levelname)s: %(message)s",
+        handlers=handlers,
+        force=True,
+    )
+
+
 def main(args: Optional[argparse.Namespace] = None) -> int:
     args = args or cmdl_parser.parse_args()
     if yt_dlp is None:
@@ -246,6 +259,7 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
     urls = _read_inputs(args.input)
     if not urls:
         raise DownloadError("No URLs were found in the supplied input.")
+    logger.debug("Starting download for %d input(s)", len(urls))
     yt_dlp_module: Any = yt_dlp
     try:
         progress_context = nullcontext() if args.quiet else DownloadProgress()
@@ -256,7 +270,9 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
                 options["noprogress"] = True
                 options["progress_hooks"] = [progress.update]
             with yt_dlp_module.YoutubeDL(options) as downloader:
-                return downloader.download(urls)
+                result = downloader.download(urls)
+                logger.debug("Download completed with exit code %d", result)
+                return result
     except yt_dlp_module.utils.DownloadError as error:
         raise DownloadError(str(error)) from error
 
@@ -266,9 +282,10 @@ def execute(*args: str) -> int:
 
 
 def cli() -> None:
-    logging.basicConfig(level=logging.DEBUG if "--verbose" in sys.argv else logging.INFO)
+    args = cmdl_parser.parse_args()
+    _configure_logging(args)
     try:
-        raise SystemExit(main())
+        raise SystemExit(main(args))
     except KeyboardInterrupt:
         print("\nInterrupted.", file=sys.stderr)
         raise SystemExit(130)
