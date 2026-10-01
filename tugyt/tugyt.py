@@ -274,7 +274,7 @@ def _print_banner(show_version: bool = True) -> None:
     if pyfiglet is not None:
         try:
             print(pyfiglet.figlet_format(MODULE_NAME, font="standard"), end="")
-        except (OSError, UnicodeError):
+        except Exception:
             pass
     if show_version:
         print(__version__)

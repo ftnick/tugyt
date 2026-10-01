@@ -112,6 +112,19 @@ def test_print_banner_falls_back_to_version(monkeypatch, capsys):
     assert capsys.readouterr().out == f"{app.__version__}\n"
 
 
+def test_print_banner_falls_back_when_font_resources_fail(monkeypatch, capsys):
+    class BrokenFiglet:
+        @staticmethod
+        def figlet_format(text, font):
+            raise ModuleNotFoundError("pyfiglet.fonts")
+
+    monkeypatch.setattr(app, "pyfiglet", BrokenFiglet)
+
+    app._print_banner()
+
+    assert capsys.readouterr().out == f"{app.__version__}\n"
+
+
 def test_print_banner_avoids_duplicate_version_for_version_option(monkeypatch, capsys):
     class FakeFiglet:
         @staticmethod
