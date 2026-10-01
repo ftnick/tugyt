@@ -4,6 +4,8 @@ import pytest
 
 import tugyt.tugyt as app
 
+RealDownloadProgress = app.DownloadProgress
+
 
 class FakeProgress:
     entered = 0
@@ -49,6 +51,24 @@ class FakeYtdlp:
     YoutubeDL = FakeDownloader
 
 
+class RecordingProgress:
+    def __init__(self, *columns):
+        self.tasks = []
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def add_task(self, description, total=None):
+        self.tasks.append((description, total))
+        return len(self.tasks) - 1
+
+    def update(self, task_id, **kwargs):
+        pass
+
+
 @pytest.fixture(autouse=True)
 def reset_fake_downloader(monkeypatch):
     FakeDownloader.instances = []
@@ -68,6 +88,15 @@ def test_parser_defaults_and_input():
     assert args.retries == 10
 
 
+def test_parser_rejects_quiet_and_verbose_together():
+    with pytest.raises(SystemExit):
+        app.create_parser().parse_args([
+            "https://www.youtube.com/watch?v=example",
+            "--quiet",
+            "--verbose",
+        ])
+
+
 def test_read_inputs_expands_files_and_preserves_order(tmp_path):
     input_file = tmp_path / "urls.txt"
     input_file.write_text(
@@ -82,15 +111,42 @@ def test_read_inputs_expands_files_and_preserves_order(tmp_path):
     ]
 
 
+def test_read_inputs_rejects_directories(tmp_path):
+    input_directory = tmp_path / "urls"
+    input_directory.mkdir()
+
+    with pytest.raises(app.DownloadError, match="Input path is not a file"):
+        app._read_inputs([str(input_directory)])
+
+
 def test_normalize_subtitle_languages_expands_all_alias():
     assert app._normalize_subtitle_languages("en.*,all,ja") == ["en.*", ".*", "ja"]
+
+
+def test_progress_tasks_distinguish_same_basename(monkeypatch, tmp_path):
+    monkeypatch.setattr(app, "Progress", RecordingProgress)
+    progress = RealDownloadProgress()
+
+    progress.update({
+        "status": "downloading",
+        "filename": str(tmp_path / "first" / "video.mp4"),
+        "total_bytes": 10,
+        "downloaded_bytes": 1,
+    })
+    progress.update({
+        "status": "downloading",
+        "filename": str(tmp_path / "second" / "video.mp4"),
+        "total_bytes": 20,
+        "downloaded_bytes": 2,
+    })
+
+    assert len(progress.tasks) == 2
 
 
 def test_build_options_translates_all_optional_flags():
     args = app.create_parser().parse_args([
         "https://www.youtube.com/watch?v=example",
         "--quiet",
-        "--verbose",
         "--keep-video",
         "--ignore-errors",
         "--no-continue",
@@ -159,7 +215,6 @@ def test_build_options_translates_all_optional_flags():
     }]
     assert options["http_headers"] == {"User-Agent": "test-agent"}
     assert options["proxy"] == "http://proxy.test:8080"
-    assert options["verbose"] is True
 
 
 def test_main_downloads_expanded_inputs_and_adds_progress_hook(tmp_path):

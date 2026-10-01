@@ -84,20 +84,21 @@ class DownloadProgress:
 
     def update(self, status: dict) -> None:
         if status["status"] == "downloading":
-            filename = Path(status.get("filename", "download")).name
-            task_id = self.tasks.get(filename)
+            source_filename = status.get("filename", "download")
+            filename = Path(source_filename).name
+            task_id = self.tasks.get(source_filename)
             total = status.get("total_bytes") or status.get("total_bytes_estimate")
             if task_id is None:
                 task_id = self.progress.add_task(filename, total=total)
-                self.tasks[filename] = task_id
+                self.tasks[source_filename] = task_id
             self.progress.update(
                 task_id,
                 total=total,
                 completed=status.get("downloaded_bytes", 0),
             )
         elif status["status"] == "finished":
-            filename = Path(status.get("filename", "download")).name
-            task_id = self.tasks.get(filename)
+            source_filename = status.get("filename", "download")
+            task_id = self.tasks.get(source_filename)
             if task_id is not None:
                 self.progress.update(task_id, completed=status.get("total_bytes"))
 
@@ -113,6 +114,8 @@ def _read_inputs(inputs: Iterable[str]) -> List[str]:
                     line.strip() for line in input_file
                     if line.strip() and not line.lstrip().startswith("#")
                 )
+        elif path.exists():
+            raise DownloadError(f"Input path is not a file: {path}")
         else:
             expanded.append(value)
     return expanded
@@ -187,8 +190,9 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("input", nargs="+", help="YouTube URLs or text files containing URLs")
     parser.add_argument("-v", "--version", action="version", version=__version__)
-    parser.add_argument("-q", "--quiet", action="store_true", help="suppress yt-dlp output")
-    parser.add_argument("--verbose", action="store_true", help="show yt-dlp debug output")
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument("-q", "--quiet", action="store_true", help="suppress yt-dlp output")
+    output_group.add_argument("--verbose", action="store_true", help="show yt-dlp debug output")
     parser.add_argument("-k", "--keep-video", action="store_true",
                         help="keep the original downloaded fragments after merging")
     parser.add_argument("--ignore-errors", action="store_true", help="continue when an item fails")

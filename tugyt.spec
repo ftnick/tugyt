@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['tugyt.py'],
+    ['tugyt/__main__.py'],
     pathex=[],
     binaries=[],
     datas=[],
