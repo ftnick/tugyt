@@ -35,3 +35,17 @@ irm https://raw.githubusercontent.com/ftnick/tugyt/main/install.ps1 | iex
 ```
 
 Restart the terminal after installation, then run `tugyt --help`.
+
+## Uninstall
+
+To uninstall on macOS or Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ftnick/tugyt/main/install.sh | sh -s -- --uninstall
+```
+
+On Windows, run:
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/ftnick/tugyt/main/install.ps1))) -Uninstall
+```

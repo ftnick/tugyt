@@ -1,6 +1,33 @@
+param(
+    [switch]$Uninstall
+)
+
 $ErrorActionPreference = "Stop"
 
 $repository = "ftnick/tugyt"
+$installDirectory = Join-Path $env:LOCALAPPDATA "Programs\tugyt"
+if ($Uninstall) {
+    $executablePath = Join-Path $installDirectory "tugyt.exe"
+    if (Test-Path -LiteralPath $executablePath) {
+        Remove-Item -LiteralPath $executablePath -Force
+    }
+
+    $pathComparer = { $_.TrimEnd([char[]]@('\')) -ine $installDirectory.TrimEnd([char[]]@('\')) }
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $originalUserPathEntries = @($userPath -split ";" | Where-Object { $_ })
+    $userPathEntries = @($originalUserPathEntries | Where-Object $pathComparer)
+    if ($userPathEntries.Count -ne $originalUserPathEntries.Count) {
+        [Environment]::SetEnvironmentVariable("Path", ($userPathEntries -join ";"), "User")
+    }
+    $env:Path = (@($env:Path -split ";" | Where-Object { $_ } | Where-Object $pathComparer) -join ";")
+
+    if ((Test-Path -LiteralPath $installDirectory) -and -not (Get-ChildItem -LiteralPath $installDirectory -Force | Select-Object -First 1)) {
+        Remove-Item -LiteralPath $installDirectory -Force
+    }
+    Write-Output "Uninstalled tugyt and removed its PATH entry. Restart your terminal to apply the change."
+    return
+}
+
 $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$repository/releases/latest" -Headers @{
     "User-Agent" = "tugyt-installer"
 }
@@ -11,7 +38,6 @@ if ($null -eq $asset) {
 }
 
 $temporaryDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
-$installDirectory = Join-Path $env:LOCALAPPDATA "Programs\tugyt"
 try {
     New-Item -ItemType Directory -Path $temporaryDirectory -Force | Out-Null
     $archivePath = Join-Path $temporaryDirectory $archiveName
@@ -32,7 +58,7 @@ finally {
 
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 $pathEntries = @($userPath -split ";" | Where-Object { $_ })
-if (-not ($pathEntries | Where-Object { $_.TrimEnd("\") -ieq $installDirectory.TrimEnd("\") })) {
+if (-not ($pathEntries | Where-Object { $_.TrimEnd([char[]]@('\')) -ieq $installDirectory.TrimEnd([char[]]@('\')) })) {
     $updatedPath = (@($pathEntries) + $installDirectory) -join ";"
     [Environment]::SetEnvironmentVariable("Path", $updatedPath, "User")
 }

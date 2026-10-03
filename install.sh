@@ -2,6 +2,35 @@
 set -eu
 
 repository="ftnick/tugyt"
+install_directory="${HOME}/.local/bin"
+path_line='export PATH="$HOME/.local/bin:$PATH"'
+
+case "${1:-}" in
+    "") ;;
+    --uninstall)
+        rm -f "${install_directory}/tugyt"
+        for profile in "${HOME}/.profile" "${HOME}/.bashrc" "${HOME}/.zshrc"; do
+            if [ -f "$profile" ]; then
+                temporary_profile="$(mktemp)"
+                awk -v path_line="$path_line" '$0 != path_line' "$profile" > "$temporary_profile"
+                cat "$temporary_profile" > "$profile"
+                rm -f "$temporary_profile"
+            fi
+        done
+        rmdir "$install_directory" 2>/dev/null || :
+        printf '%s\n' "Uninstalled tugyt and removed its PATH entry from shell profiles."
+        exit 0
+        ;;
+    --help|-h)
+        printf '%s\n' "Usage: install.sh [--uninstall]"
+        exit 0
+        ;;
+    *)
+        printf 'Unknown option: %s\nUsage: install.sh [--uninstall]\n' "$1" >&2
+        exit 2
+        ;;
+esac
+
 case "$(uname -s)" in
     Darwin) platform="macos" ;;
     Linux) platform="ubuntu" ;;
@@ -40,7 +69,6 @@ if [ ! -f "${temporary_directory}/extracted/tugyt" ]; then
     exit 1
 fi
 
-install_directory="${HOME}/.local/bin"
 mkdir -p "$install_directory"
 cp "${temporary_directory}/extracted/tugyt" "${install_directory}/tugyt"
 chmod 755 "${install_directory}/tugyt"
@@ -50,7 +78,6 @@ case "${SHELL:-}" in
     */bash) profile="${HOME}/.bashrc" ;;
     *) profile="${HOME}/.profile" ;;
 esac
-path_line='export PATH="$HOME/.local/bin:$PATH"'
 if ! grep -Fqx "$path_line" "$profile" 2>/dev/null; then
     printf '\n%s\n' "$path_line" >> "$profile"
 fi
