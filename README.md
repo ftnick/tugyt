@@ -19,3 +19,19 @@
   <a href="https://github.com/ftnick/tugyt/blob/main/LICENSE"><img src="https://img.shields.io/github/license/ftnick/tugyt" alt="License"></a>
   <a href="https://github.com/ftnick/tugyt/commits/main"><img src="https://img.shields.io/github/last-commit/ftnick/tugyt" alt="Last commit"></a>
 </p>
+
+## Install
+
+Install the latest standalone release on macOS or Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ftnick/tugyt/main/install.sh | sh
+```
+
+On Windows, run this in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/ftnick/tugyt/main/install.ps1 | iex
+```
+
+Restart the terminal after installation, then run `tugyt --help`.
