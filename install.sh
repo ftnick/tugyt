@@ -6,9 +6,43 @@ install_directory="${HOME}/.local/bin"
 path_line='case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac'
 legacy_path_line='export PATH="$HOME/.local/bin:$PATH"'
 
+find_pip_python() {
+    for python_command in python3 python; do
+        if command -v "$python_command" >/dev/null 2>&1 &&
+            "$python_command" -m pip show tugyt >/dev/null 2>&1; then
+            printf '%s\n' "$python_command"
+            return 0
+        fi
+    done
+    return 1
+}
+
 case "${1:-}" in
     "") ;;
     --uninstall)
+        managed_install=false
+        if [ -f "${install_directory}/tugyt" ]; then
+            managed_install=true
+        fi
+        for profile in "${HOME}/.profile" "${HOME}/.bashrc" "${HOME}/.bash_profile" "${HOME}/.zshrc"; do
+            if [ -f "$profile" ] && {
+                grep -Fqx "$path_line" "$profile" || grep -Fqx "$legacy_path_line" "$profile"
+            }; then
+                managed_install=true
+            fi
+        done
+        if [ "$managed_install" = false ]; then
+            pip_python="$(find_pip_python || true)"
+            if [ -n "$pip_python" ]; then
+                printf 'No standalone tugyt installation was found. A pip installation exists. Remove it with: %s -m pip uninstall tugyt\n' "$pip_python"
+            elif existing_command="$(command -v tugyt 2>/dev/null)"; [ -n "$existing_command" ]; then
+                printf 'No tugyt installation managed by this installer was found. An existing command is at: %s\n' "$existing_command"
+            else
+                printf '%s\n' "tugyt is not installed."
+            fi
+            exit 0
+        fi
+
         rm -f "${install_directory}/tugyt"
         for profile in "${HOME}/.profile" "${HOME}/.bashrc" "${HOME}/.bash_profile" "${HOME}/.zshrc"; do
             if [ -f "$profile" ]; then
@@ -21,6 +55,10 @@ case "${1:-}" in
         done
         rmdir "$install_directory" 2>/dev/null || :
         printf '%s\n' "Uninstalled tugyt and removed its PATH entry from shell profiles."
+        pip_python="$(find_pip_python || true)"
+        if [ -n "$pip_python" ]; then
+            printf 'A separate pip installation remains. Remove it with: %s -m pip uninstall tugyt\n' "$pip_python"
+        fi
         exit 0
         ;;
     --help|-h)
@@ -32,6 +70,27 @@ case "${1:-}" in
         exit 2
         ;;
 esac
+
+pip_python="$(find_pip_python || true)"
+if [ -n "$pip_python" ]; then
+    if [ -f "${install_directory}/tugyt" ]; then
+        printf 'tugyt is already installed via pip and as a standalone binary. No changes made.\n'
+    else
+        printf 'tugyt is already installed via pip. No standalone binary was installed.\n'
+    fi
+    printf 'To uninstall the pip version, run: %s -m pip uninstall tugyt\n' "$pip_python"
+    exit 0
+fi
+
+if [ -f "${install_directory}/tugyt" ]; then
+    printf 'tugyt is already installed at %s/tugyt. No changes made.\n' "$install_directory"
+    exit 0
+fi
+
+if existing_command="$(command -v tugyt 2>/dev/null)"; [ -n "$existing_command" ]; then
+    printf 'tugyt is already available at %s. No changes made.\n' "$existing_command"
+    exit 0
+fi
 
 case "$(uname -s)" in
     Darwin) platform="macos" ;;
