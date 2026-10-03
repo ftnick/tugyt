@@ -256,6 +256,7 @@ def test_build_options_translates_all_optional_flags():
 
     assert options["format"] == "best"
     assert options["outtmpl"] == "%(id)s.%(ext)s"
+    assert options["restrictfilenames"] is True
     assert options["quiet"] is True
     assert options["no_warnings"] is True
     assert options["continuedl"] is False

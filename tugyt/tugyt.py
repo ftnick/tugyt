@@ -149,6 +149,7 @@ def build_options(args: argparse.Namespace) -> dict:
     options = {
         "format": args.format,
         "outtmpl": args.output,
+        "restrictfilenames": True,
         "noplaylist": args.no_playlist,
         "quiet": args.quiet,
         "no_warnings": args.quiet,
