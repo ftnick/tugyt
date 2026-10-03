@@ -3,16 +3,18 @@ set -eu
 
 repository="ftnick/tugyt"
 install_directory="${HOME}/.local/bin"
-path_line='export PATH="$HOME/.local/bin:$PATH"'
+path_line='case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac'
+legacy_path_line='export PATH="$HOME/.local/bin:$PATH"'
 
 case "${1:-}" in
     "") ;;
     --uninstall)
         rm -f "${install_directory}/tugyt"
-        for profile in "${HOME}/.profile" "${HOME}/.bashrc" "${HOME}/.zshrc"; do
+        for profile in "${HOME}/.profile" "${HOME}/.bashrc" "${HOME}/.bash_profile" "${HOME}/.zshrc"; do
             if [ -f "$profile" ]; then
                 temporary_profile="$(mktemp)"
-                awk -v path_line="$path_line" '$0 != path_line' "$profile" > "$temporary_profile"
+                awk -v path_line="$path_line" -v legacy_path_line="$legacy_path_line" \
+                    '$0 != path_line && $0 != legacy_path_line' "$profile" > "$temporary_profile"
                 cat "$temporary_profile" > "$profile"
                 rm -f "$temporary_profile"
             fi
@@ -75,9 +77,26 @@ chmod 755 "${install_directory}/tugyt"
 
 case "${SHELL:-}" in
     */zsh) profile="${HOME}/.zshrc" ;;
-    */bash) profile="${HOME}/.bashrc" ;;
+    */bash)
+        if [ "$(uname -s)" = "Darwin" ]; then
+            profile="${HOME}/.bash_profile"
+        else
+            profile="${HOME}/.bashrc"
+        fi
+        ;;
     *) profile="${HOME}/.profile" ;;
 esac
+
+for existing_profile in "${HOME}/.profile" "${HOME}/.bashrc" "${HOME}/.bash_profile" "${HOME}/.zshrc"; do
+    if [ -f "$existing_profile" ] && grep -Fqx "$legacy_path_line" "$existing_profile"; then
+        temporary_profile="$(mktemp)"
+        awk -v legacy_path_line="$legacy_path_line" '$0 != legacy_path_line' \
+            "$existing_profile" > "$temporary_profile"
+        cat "$temporary_profile" > "$existing_profile"
+        rm -f "$temporary_profile"
+    fi
+done
+
 if ! grep -Fqx "$path_line" "$profile" 2>/dev/null; then
     printf '\n%s\n' "$path_line" >> "$profile"
 fi
