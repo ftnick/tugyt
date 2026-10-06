@@ -144,6 +144,7 @@ def build_options(args: argparse.Namespace) -> dict:
     output_path = Path(args.output).expanduser()
     options = {
         "format": args.format,
+        "merge_output_format": "mp4",
         "outtmpl": str(output_path / DEFAULT_OUTPUT),
         "restrictfilenames": True,
         "noplaylist": args.no_playlist,
@@ -270,7 +271,7 @@ def create_parser() -> argparse.ArgumentParser:
         replacement="--output", default=argparse.SUPPRESS, help=argparse.SUPPRESS,
     )
     parser.add_argument("--format", default="bv*+ba/b",
-                        help="yt-dlp format selector (default: bv*+ba/b)")
+                        help="yt-dlp format selector (default: bv*+ba/b; merged output is MP4)")
     parser.add_argument("--extract-audio", action="store_true", help="extract audio with ffmpeg")
     parser.add_argument(
         "--audio-format",

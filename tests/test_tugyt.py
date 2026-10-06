@@ -88,6 +88,7 @@ def test_parser_defaults_and_input():
     assert args.output == "."
     assert args.format == "bv*+ba/b"
     assert args.retries == 10
+    assert app.build_options(args)["merge_output_format"] == "mp4"
 
 
 def test_help_contains_supported_options_only():
@@ -300,6 +301,7 @@ def test_build_options_translates_all_optional_flags():
     options = app.build_options(args)
 
     assert options["format"] == "best"
+    assert options["merge_output_format"] == "mp4"
     assert options["outtmpl"] == str(Path("downloads") / app.DEFAULT_OUTPUT)
     assert options["restrictfilenames"] is True
     assert options["quiet"] is True
