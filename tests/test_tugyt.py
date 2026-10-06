@@ -89,6 +89,90 @@ def test_parser_defaults_and_input():
     assert args.retries == 10
 
 
+def test_help_contains_supported_options_only():
+    supported_options = [
+        "-h", "--help", "-v", "--version", "-q", "--quiet", "--verbose",
+        "--ignore-errors", "--no-continue", "-o", "--output", "-f", "--format",
+        "-x", "--extract-audio", "--audio-format", "--audio-quality",
+        "--list-formats", "--dump-json", "--skip-download", "--no-playlist",
+        "--playlist-start", "--playlist-end", "--playlist-items",
+    ]
+    deprecated_options = [
+        "--log-file", "-k", "--output-path", "-F", "--write-thumbnail",
+        "--write-info-json", "--write-description", "--write-subs",
+        "--write-auto-subs", "--sub-langs", "--sub-format", "--embed-metadata",
+        "--embed-thumbnail", "--embed-subs", "--flat-playlist",
+        "--download-archive", "--remote-components", "--sponsorblock-remove",
+        "-y", "--proxy", "--user-agent", "--concurrent-fragments", "--retries",
+        "--rate-limit",
+    ]
+
+    help_text = app.create_parser().format_help()
+
+    for option in supported_options:
+        assert option in help_text
+    for option in deprecated_options:
+        assert option not in help_text
+
+
+def test_deprecated_options_warn_and_keep_working(capsys):
+    parser = app.create_parser()
+    arguments = [
+        "https://www.youtube.com/watch?v=example",
+        "--log-file", "tugyt.log",
+        "-k",
+        "--output-path", "legacy.mp4",
+        "-F",
+        "--write-thumbnail",
+        "--write-info-json",
+        "--write-description",
+        "--write-subs",
+        "--write-auto-subs",
+        "--sub-langs", "en",
+        "--sub-format", "vtt",
+        "--embed-metadata",
+        "--embed-thumbnail",
+        "--embed-subs",
+        "--flat-playlist",
+        "--download-archive", "archive.txt",
+        "--remote-components", "ejs:github",
+        "--sponsorblock-remove", "sponsor",
+        "--proxy", "http://proxy.test:8080",
+        "--user-agent", "legacy-agent",
+        "--concurrent-fragments", "4",
+        "--retries", "3",
+        "--rate-limit", "1000",
+    ]
+
+    args = parser.parse_args(arguments)
+    warnings = capsys.readouterr().err.splitlines()
+
+    assert len(warnings) == 23
+    assert all("deprecated and is not officially supported" in warning for warning in warnings)
+    assert args.log_file == "tugyt.log"
+    assert args.output == "legacy.mp4"
+    assert args.list_formats is True
+    assert args.write_thumbnail is True
+    assert args.write_info_json is True
+    assert args.write_description is True
+    assert args.write_subs is True
+    assert args.write_auto_subs is True
+    assert args.sub_langs == "en"
+    assert args.sub_format == "vtt"
+    assert args.embed_metadata is True
+    assert args.embed_thumbnail is True
+    assert args.embed_subs is True
+    assert args.flat_playlist is True
+    assert args.download_archive == "archive.txt"
+    assert args.remote_components == ["ejs:github"]
+    assert args.sponsorblock_remove == "sponsor"
+    assert args.proxy == "http://proxy.test:8080"
+    assert args.user_agent == "legacy-agent"
+    assert args.concurrent_fragments == 4
+    assert args.retries == 3
+    assert args.rate_limit == 1000
+
+
 def test_print_banner_uses_pyfiglet_and_shows_version(monkeypatch, capsys):
     class FakeFiglet:
         @staticmethod

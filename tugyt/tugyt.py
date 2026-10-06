@@ -197,6 +197,53 @@ def build_options(args: argparse.Namespace) -> dict:
     return options
 
 
+class DeprecatedOptionAction(argparse.Action):
+    def __init__(self, option_strings, dest, replacement=None, **kwargs):
+        self.replacement = replacement
+        super().__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        message = (
+            f"warning: {option_string} is deprecated and is not officially supported by tugyt"
+        )
+        if self.replacement:
+            message += f"; use {self.replacement} instead"
+        print(message, file=sys.stderr)
+        setattr(namespace, self.dest, values)
+
+
+class DeprecatedFlagAction(argparse.Action):
+    def __init__(self, option_strings, dest, replacement=None, **kwargs):
+        self.replacement = replacement
+        super().__init__(option_strings, dest, nargs=0, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        message = (
+            f"warning: {option_string} is deprecated and is not officially supported by tugyt"
+        )
+        if self.replacement:
+            message += f"; use {self.replacement} instead"
+        print(message, file=sys.stderr)
+        setattr(namespace, self.dest, True)
+
+
+class DeprecatedAppendAction(argparse.Action):
+    def __init__(self, option_strings, dest, replacement=None, **kwargs):
+        self.replacement = replacement
+        super().__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        message = (
+            f"warning: {option_string} is deprecated and is not officially supported by tugyt"
+        )
+        if self.replacement:
+            message += f"; use {self.replacement} instead"
+        print(message, file=sys.stderr)
+        items = getattr(namespace, self.dest, None) or []
+        items.append(values)
+        setattr(namespace, self.dest, items)
+
+
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=MODULE_NAME,
@@ -207,13 +254,23 @@ def create_parser() -> argparse.ArgumentParser:
     output_group = parser.add_mutually_exclusive_group()
     output_group.add_argument("-q", "--quiet", action="store_true", help="suppress yt-dlp output")
     output_group.add_argument("--verbose", action="store_true", help="show yt-dlp debug output")
-    parser.add_argument("--log-file", metavar="FILE", help="write warnings and debug details to FILE")
-    parser.add_argument("-k", "--keep-video", action="store_true",
-                        help="keep the original downloaded fragments after merging")
+
+    parser.add_argument(
+        "--log-file", metavar="FILE", action=DeprecatedOptionAction,
+        replacement=None, help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "-k", "--keep-video", action=DeprecatedFlagAction,
+        replacement=None, help=argparse.SUPPRESS,
+    )
     parser.add_argument("--ignore-errors", action="store_true", help="continue when an item fails")
     parser.add_argument("--no-continue", action="store_true", help="restart partial downloads")
-    parser.add_argument("-o", "--output", "--output-path", default=DEFAULT_OUTPUT,
+    parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT,
                         help="output template (default: %%(title)s [%%(id)s].%%(ext)s)")
+    parser.add_argument(
+        "--output-path", dest="output", action=DeprecatedOptionAction,
+        replacement="-o/--output", help=argparse.SUPPRESS,
+    )
     parser.add_argument("-f", "--format", default="bv*+ba/b",
                         help="yt-dlp format selector (default: bv*+ba/b)")
     parser.add_argument("-x", "--extract-audio", action="store_true", help="extract audio with ffmpeg")
@@ -223,40 +280,75 @@ def create_parser() -> argparse.ArgumentParser:
         default="mp3",
     )
     parser.add_argument("--audio-quality", default="192K", help="audio bitrate passed to ffmpeg")
-    parser.add_argument("-F", "--list-formats", action="store_true", help="list available formats without downloading")
+    parser.add_argument(
+        "--list-formats", action="store_true",
+        help="list available formats without downloading",
+    )
+    parser.add_argument(
+        "-F", dest="list_formats", action=DeprecatedFlagAction,
+        replacement="--list-formats", help=argparse.SUPPRESS,
+    )
     parser.add_argument("--dump-json", action="store_true", help="print metadata as JSON")
     parser.add_argument("--skip-download", action="store_true", help="process metadata without downloading media")
-    parser.add_argument("--write-thumbnail", action="store_true", help="save the video thumbnail")
-    parser.add_argument("--write-info-json", action="store_true", help="save metadata beside the media")
-    parser.add_argument("--write-description", action="store_true", help="save the video description")
-    parser.add_argument("--write-subs", action="store_true", help="download manually created subtitles")
-    parser.add_argument("--write-auto-subs", action="store_true", help="download automatic subtitles")
-    parser.add_argument("--sub-langs", default="en.*,ja.*,all", help="subtitle languages")
-    parser.add_argument("--sub-format", default="best", help="subtitle format")
-    parser.add_argument("--embed-metadata", action="store_true", help="embed metadata in the media")
-    parser.add_argument("--embed-thumbnail", action="store_true", help="embed the thumbnail in the media")
-    parser.add_argument("--embed-subs", action="store_true", help="embed downloaded subtitles")
+
+    deprecated_options = [
+        (("--write-thumbnail",), DeprecatedFlagAction, None, None, None),
+        (("--write-info-json",), DeprecatedFlagAction, None, None, None),
+        (("--write-description",), DeprecatedFlagAction, None, None, None),
+        (("--write-subs",), DeprecatedFlagAction, None, None, None),
+        (("--write-auto-subs",), DeprecatedFlagAction, None, None, None),
+        (("--sub-langs",), DeprecatedOptionAction, None, None, None),
+        (("--sub-format",), DeprecatedOptionAction, None, None, None),
+        (("--embed-metadata",), DeprecatedFlagAction, None, None, None),
+        (("--embed-thumbnail",), DeprecatedFlagAction, None, None, None),
+        (("--embed-subs",), DeprecatedFlagAction, None, None, None),
+        (("--flat-playlist",), DeprecatedFlagAction, None, None, None),
+        (("--download-archive",), DeprecatedOptionAction, None, None, None),
+        (("--remote-components",), DeprecatedAppendAction, None, None, None),
+        (("--sponsorblock-remove",), DeprecatedOptionAction, None, None, None),
+        (("-y", "--proxy"), DeprecatedOptionAction, None, None, None),
+        (("--user-agent",), DeprecatedOptionAction, None, None, None),
+        (("--concurrent-fragments",), DeprecatedOptionAction, None, None, int),
+        (("--retries",), DeprecatedOptionAction, None, None, int),
+        (("--rate-limit",), DeprecatedOptionAction, None, None, int),
+    ]
+    for option_strings, action, replacement, dest, value_type in deprecated_options:
+        parser.add_argument(
+            *option_strings,
+            action=action,
+            replacement=replacement,
+            dest=dest,
+            type=value_type,
+            help=argparse.SUPPRESS,
+        )
+
     parser.add_argument("--no-playlist", action="store_true", help="download only the supplied video")
-    parser.add_argument("--flat-playlist", action="store_true", help="do not resolve playlist entries")
     parser.add_argument("--playlist-start", type=int, metavar="N", help="playlist item to start at")
     parser.add_argument("--playlist-end", type=int, metavar="N", help="playlist item to stop at")
     parser.add_argument("--playlist-items", metavar="ITEMS", help="playlist items, e.g. 1,3,5-7")
-    parser.add_argument("--download-archive", metavar="FILE", help="skip IDs already recorded in FILE")
-    parser.add_argument(
-        "--remote-components",
-        action="append",
-        choices=("ejs:github", "ejs:npm"),
-        help="download yt-dlp components such as the YouTube challenge solver",
+    parser.set_defaults(
+        log_file=None,
+        keep_video=False,
+        write_thumbnail=False,
+        write_info_json=False,
+        write_description=False,
+        write_subs=False,
+        write_auto_subs=False,
+        sub_langs="en.*,ja.*,all",
+        sub_format="best",
+        embed_metadata=False,
+        embed_thumbnail=False,
+        embed_subs=False,
+        flat_playlist=False,
+        download_archive=None,
+        remote_components=None,
+        sponsorblock_remove=None,
+        proxy=None,
+        user_agent=None,
+        concurrent_fragments=1,
+        retries=10,
+        rate_limit=None,
     )
-    parser.add_argument("--sponsorblock-remove", metavar="CATEGORIES",
-                        help="remove SponsorBlock categories, e.g. sponsor,intro")
-    parser.add_argument("-y", "--proxy", help="HTTP/SOCKS proxy URL")
-    parser.add_argument("--user-agent", help="custom HTTP User-Agent")
-    parser.add_argument("--concurrent-fragments", type=int, default=1, metavar="N",
-                        help="number of fragments to download concurrently")
-    parser.add_argument("--retries", type=int, default=10, metavar="N", help="retry count")
-    parser.add_argument("--rate-limit", type=int, metavar="BYTES",
-                        help="maximum download rate in bytes per second")
     return parser
 
 
