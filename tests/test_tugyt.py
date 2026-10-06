@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Optional
 
 import pytest
@@ -84,7 +85,7 @@ def test_parser_defaults_and_input():
     args = app.create_parser().parse_args(["https://www.youtube.com/watch?v=example"])
 
     assert args.input == ["https://www.youtube.com/watch?v=example"]
-    assert args.output == app.DEFAULT_OUTPUT
+    assert args.output == "."
     assert args.format == "bv*+ba/b"
     assert args.retries == 10
 
@@ -125,7 +126,7 @@ def test_deprecated_options_warn_and_keep_working(capsys):
         "https://www.youtube.com/watch?v=example",
         "--log-file", "tugyt.log",
         "-k",
-        "--output-path", "legacy.mp4",
+        "--output-path", "legacy-output",
         "-F",
         "--write-thumbnail",
         "--write-info-json",
@@ -154,7 +155,7 @@ def test_deprecated_options_warn_and_keep_working(capsys):
     assert len(warnings) == 23
     assert all("deprecated and is not officially supported" in warning for warning in warnings)
     assert args.log_file == "tugyt.log"
-    assert args.output == "legacy.mp4"
+    assert args.output == "legacy-output"
     assert args.list_formats is True
     assert args.write_thumbnail is True
     assert args.write_info_json is True
@@ -249,7 +250,7 @@ def test_build_options_translates_all_optional_flags():
         "--ignore-errors",
         "--no-continue",
         "--output",
-        "%(id)s.%(ext)s",
+        "downloads",
         "--format",
         "best",
         "--extract-audio",
@@ -299,7 +300,7 @@ def test_build_options_translates_all_optional_flags():
     options = app.build_options(args)
 
     assert options["format"] == "best"
-    assert options["outtmpl"] == "%(id)s.%(ext)s"
+    assert options["outtmpl"] == str(Path("downloads") / app.DEFAULT_OUTPUT)
     assert options["restrictfilenames"] is True
     assert options["quiet"] is True
     assert options["no_warnings"] is True
@@ -328,6 +329,21 @@ def test_main_downloads_expanded_inputs_and_adds_progress_hook(tmp_path):
     assert downloader.urls == ["https://example.test/video"]
     assert downloader.options["noprogress"] is True
     assert len(downloader.options["progress_hooks"]) == 1
+
+
+def test_main_creates_output_folder(tmp_path):
+    output_folder = tmp_path / "downloads" / "nested"
+    args = app.create_parser().parse_args([
+        "https://example.test/video",
+        "--output",
+        str(output_folder),
+    ])
+
+    assert app.main(args) == 0
+    assert output_folder.is_dir()
+    assert FakeDownloader.instances[0].options["outtmpl"] == str(
+        output_folder / app.DEFAULT_OUTPUT,
+    )
 
 
 def test_main_quiet_mode_does_not_register_progress_hook():

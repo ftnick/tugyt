@@ -141,9 +141,10 @@ def _normalize_subtitle_languages(value: str) -> List[str]:
 
 
 def build_options(args: argparse.Namespace) -> dict:
+    output_path = Path(args.output).expanduser()
     options = {
         "format": args.format,
-        "outtmpl": args.output,
+        "outtmpl": str(output_path / DEFAULT_OUTPUT),
         "restrictfilenames": True,
         "noplaylist": args.no_playlist,
         "quiet": args.quiet,
@@ -260,11 +261,13 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--ignore-errors", action="store_true", help="continue when an item fails")
     parser.add_argument("--no-continue", action="store_true", help="restart partial downloads")
-    parser.add_argument("--output", default=DEFAULT_OUTPUT,
-                        help="output template (default: %%(title)s [%%(id)s].%%(ext)s)")
+    parser.add_argument(
+        "--output", default=".", metavar="FOLDER",
+        help="output folder (default: current directory)",
+    )
     parser.add_argument(
         "--output-path", dest="output", action=DeprecatedOptionAction,
-        replacement="--output", help=argparse.SUPPRESS,
+        replacement="--output", default=argparse.SUPPRESS, help=argparse.SUPPRESS,
     )
     parser.add_argument("--format", default="bv*+ba/b",
                         help="yt-dlp format selector (default: bv*+ba/b)")
@@ -369,6 +372,8 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
     urls = _read_inputs(args.input)
     if not urls:
         raise DownloadError("No URLs were found in the supplied input.")
+    output_path = Path(args.output).expanduser()
+    output_path.mkdir(parents=True, exist_ok=True)
     logger.debug("Starting download for %d input(s)", len(urls))
     yt_dlp_module: Any = yt_dlp
     options = build_options(args)
