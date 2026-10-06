@@ -260,15 +260,15 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--ignore-errors", action="store_true", help="continue when an item fails")
     parser.add_argument("--no-continue", action="store_true", help="restart partial downloads")
-    parser.add_argument("-o", "--output", default=DEFAULT_OUTPUT,
+    parser.add_argument("--output", default=DEFAULT_OUTPUT,
                         help="output template (default: %%(title)s [%%(id)s].%%(ext)s)")
     parser.add_argument(
         "--output-path", dest="output", action=DeprecatedOptionAction,
-        replacement="-o/--output", help=argparse.SUPPRESS,
+        replacement="--output", help=argparse.SUPPRESS,
     )
-    parser.add_argument("-f", "--format", default="bv*+ba/b",
+    parser.add_argument("--format", default="bv*+ba/b",
                         help="yt-dlp format selector (default: bv*+ba/b)")
-    parser.add_argument("-x", "--extract-audio", action="store_true", help="extract audio with ffmpeg")
+    parser.add_argument("--extract-audio", action="store_true", help="extract audio with ffmpeg")
     parser.add_argument(
         "--audio-format",
         choices=("best", "aac", "flac", "mp3", "m4a", "opus", "vorbis", "wav"),

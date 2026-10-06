@@ -92,11 +92,12 @@ def test_parser_defaults_and_input():
 def test_help_contains_supported_options_only():
     supported_options = [
         "-h", "--help", "-v", "--version", "-q", "--quiet", "--verbose",
-        "--ignore-errors", "--no-continue", "-o", "--output", "-f", "--format",
-        "-x", "--extract-audio", "--audio-format", "--audio-quality",
+        "--ignore-errors", "--no-continue", "--output", "--format",
+        "--extract-audio", "--audio-format", "--audio-quality",
         "--list-formats", "--dump-json", "--skip-download", "--no-playlist",
         "--playlist-start", "--playlist-end", "--playlist-items",
     ]
+    removed_short_options = ["-o", "-f", "-x"]
     deprecated_options = [
         "--log-file", "-k", "--output-path", "-F", "--write-thumbnail",
         "--write-info-json", "--write-description", "--write-subs",
@@ -107,10 +108,13 @@ def test_help_contains_supported_options_only():
         "--rate-limit",
     ]
 
-    help_text = app.create_parser().format_help()
+    parser = app.create_parser()
+    help_text = parser.format_help()
 
     for option in supported_options:
         assert option in help_text
+    for option in removed_short_options:
+        assert option not in parser._option_string_actions
     for option in deprecated_options:
         assert option not in help_text
 
