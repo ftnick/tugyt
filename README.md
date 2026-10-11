@@ -36,6 +36,45 @@ irm https://raw.githubusercontent.com/ftnick/tugyt/main/install.ps1 | iex
 
 Restart the terminal after installation, then run `tugyt --help`.
 
+## Examples
+
+Download a single video to the current folder:
+
+```sh
+tugyt "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+```
+
+Download to a specific folder:
+
+```sh
+tugyt --output ./downloads "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+```
+
+Download a playlist, but only a subset of items:
+
+```sh
+tugyt --output ./downloads --playlist-start 2 --playlist-end 10 "https://www.youtube.com/playlist?list=PL..."
+```
+
+Extract audio as MP3:
+
+```sh
+tugyt --extract-audio --audio-format mp3 --audio-quality 192K "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+```
+
+List available formats without downloading:
+
+```sh
+tugyt --list-formats "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+```
+
+Read URLs from a text file (one URL per line):
+
+```sh
+echo "https://www.youtube.com/watch?v=dQw4w9WgXcQ" > urls.txt
+tugyt urls.txt
+```
+
 ## Uninstall
 
 To uninstall on macOS or Linux:
