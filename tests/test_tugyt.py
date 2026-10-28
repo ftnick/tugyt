@@ -14,6 +14,7 @@ class FakeDownloader:
 
     def __init__(self, options):
         self.options = options
+        self.urls = []
         self.__class__.instances.append(self)
 
     def __enter__(self):
@@ -23,8 +24,9 @@ class FakeDownloader:
         return False
 
     def download(self, urls):
-        if self.error:
-            raise self.error("download failed")
+        error_type = self.error
+        if error_type is not None:
+            raise error_type("download failed")
         self.urls = urls
         return self.result
 

@@ -260,27 +260,45 @@ def create_parser() -> argparse.ArgumentParser:
         "-k", "--keep-video", action=DeprecatedFlagAction,
         replacement=None, help=argparse.SUPPRESS,
     )
-    parser.add_argument("--ignore-errors", action="store_true", help="continue when an item fails")
-    parser.add_argument("--no-continue", action="store_true", help="restart partial downloads")
     parser.add_argument(
-        "--output", default=".", metavar="FOLDER",
+        "--ignore-errors",
+        action="store_true",
+        help="continue when an item fails",
+    )
+    parser.add_argument(
+        "--no-continue",
+        action="store_true",
+        help="restart partial downloads",
+    )
+    parser.add_argument(
+        "--output",
+        default=".",
+        metavar="FOLDER",
         help="output folder (default: current directory)",
     )
     parser.add_argument(
         "--output-path", dest="output", action=DeprecatedOptionAction,
         replacement="--output", default=argparse.SUPPRESS, help=argparse.SUPPRESS,
     )
-    parser.add_argument("--format", default="bv*+ba/b",
-                        help="yt-dlp format selector (default: bv*+ba/b; merged output is MP4)")
+    parser.add_argument(
+        "--format",
+        default="bv*+ba/b",
+        help="yt-dlp format selector (default: bv*+ba/b; merged output is MP4)",
+    )
     parser.add_argument("--extract-audio", action="store_true", help="extract audio with ffmpeg")
     parser.add_argument(
         "--audio-format",
         choices=("best", "aac", "flac", "mp3", "m4a", "opus", "vorbis", "wav"),
         default="mp3",
     )
-    parser.add_argument("--audio-quality", default="192K", help="audio bitrate passed to ffmpeg")
     parser.add_argument(
-        "--list-formats", action="store_true",
+        "--audio-quality",
+        default="192K",
+        help="audio bitrate passed to ffmpeg",
+    )
+    parser.add_argument(
+        "--list-formats",
+        action="store_true",
         help="list available formats without downloading",
     )
     parser.add_argument(
@@ -288,7 +306,11 @@ def create_parser() -> argparse.ArgumentParser:
         replacement="--list-formats", help=argparse.SUPPRESS,
     )
     parser.add_argument("--dump-json", action="store_true", help="print metadata as JSON")
-    parser.add_argument("--skip-download", action="store_true", help="process metadata without downloading media")
+    parser.add_argument(
+        "--skip-download",
+        action="store_true",
+        help="process metadata without downloading media",
+    )
 
     deprecated_options: list[
         tuple[tuple[str], type[DeprecatedAppendAction], None, None, None]
@@ -327,7 +349,11 @@ def create_parser() -> argparse.ArgumentParser:
             help=argparse.SUPPRESS,
         )
 
-    parser.add_argument("--no-playlist", action="store_true", help="download only the supplied video")
+    parser.add_argument(
+        "--no-playlist",
+        action="store_true",
+        help="download only the supplied video",
+    )
     parser.add_argument("--playlist-start", type=int, metavar="N", help="playlist item to start at")
     parser.add_argument("--playlist-end", type=int, metavar="N", help="playlist item to stop at")
     parser.add_argument("--playlist-items", metavar="ITEMS", help="playlist items, e.g. 1,3,5-7")
@@ -414,13 +440,13 @@ def cli() -> None:
     _configure_logging(args)
     try:
         raise SystemExit(main(args))
-    except KeyboardInterrupt:
+    except KeyboardInterrupt as exc:
         print("\nInterrupted.", file=sys.stderr)
-        raise SystemExit(130)
+        raise SystemExit(130) from exc
     except DownloadError as error:
         if not error.logged:
             print(f"tugyt: {error}", file=sys.stderr)
-        raise SystemExit(1)
+        raise SystemExit(1) from error
 
 
 if __name__ == "__main__":
