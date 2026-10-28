@@ -23,6 +23,7 @@ tugyt = "tugyt.tugyt:cli"
 dev = [
     "pytest==8.4.2",
     "flake8==7.3.0",
+    "pyinstaller==6.15.0",
 ]
 
 [tool.setuptools.packages.find]
