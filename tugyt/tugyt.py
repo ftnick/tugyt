@@ -23,7 +23,7 @@ except ImportError as error:  # pragma: no cover
     yt_dlp = None
     _YT_DLP_IMPORT_ERROR = error
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 __author__ = "ftnick"
 __license__ = "MIT"
 
@@ -84,7 +84,7 @@ class DownloadProgress:
             TransferSpeedColumn(),
             TimeRemainingColumn(),
         )
-        self.tasks = {}
+        self.tasks: dict[Any, Any] = {}
 
     def __enter__(self):
         self.progress.start()
@@ -96,9 +96,9 @@ class DownloadProgress:
     def update(self, status: dict) -> None:
         if status["status"] == "downloading":
             source_filename = status.get("filename", "download")
-            filename = Path(source_filename).name
-            task_id = self.tasks.get(source_filename)
-            total = status.get("total_bytes") or status.get("total_bytes_estimate")
+            filename: str = Path(source_filename).name
+            task_id: Any | None = self.tasks.get(source_filename)
+            total: Any | None = status.get("total_bytes") or status.get("total_bytes_estimate")
             if task_id is None:
                 task_id = self.progress.add_task(filename, total=total)
                 self.tasks[source_filename] = task_id
@@ -115,9 +115,9 @@ class DownloadProgress:
 
 
 def _read_inputs(inputs: Iterable[str]) -> List[str]:
-    expanded = []
+    expanded: list[Any] = []
     for value in inputs:
-        path = Path(value).expanduser()
+        path: Path = Path(value).expanduser()
         if path.is_file():
             with path.open("r", encoding="utf-8") as input_file:
                 expanded.extend(
@@ -141,8 +141,8 @@ def _normalize_subtitle_languages(value: str) -> List[str]:
 
 
 def build_options(args: argparse.Namespace) -> dict:
-    output_path = Path(args.output).expanduser()
-    options = {
+    output_path: Path = Path(args.output).expanduser()
+    options: dict[str, YtdlpLogger | bool | str | Any] = {
         "format": args.format,
         "merge_output_format": "mp4",
         "outtmpl": str(output_path / DEFAULT_OUTPUT),
@@ -200,7 +200,7 @@ class DeprecatedOptionAction(argparse.Action):
         super().__init__(option_strings, dest, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        message = (
+        message: str = (
             f"warning: {option_string} is deprecated and is not officially supported by tugyt"
         )
         if self.replacement:
@@ -215,7 +215,7 @@ class DeprecatedFlagAction(argparse.Action):
         super().__init__(option_strings, dest, nargs=0, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        message = (
+        message: str = (
             f"warning: {option_string} is deprecated and is not officially supported by tugyt"
         )
         if self.replacement:
@@ -230,13 +230,13 @@ class DeprecatedAppendAction(argparse.Action):
         super().__init__(option_strings, dest, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        message = (
+        message: str = (
             f"warning: {option_string} is deprecated and is not officially supported by tugyt"
         )
         if self.replacement:
             message += f"; use {self.replacement} instead"
         print(message, file=sys.stderr)
-        items = getattr(namespace, self.dest, None) or []
+        items: list[Any] | Any = getattr(namespace, self.dest, None) or []
         items.append(values)
         setattr(namespace, self.dest, items)
 
@@ -248,7 +248,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("input", nargs="+", help="YouTube URLs or text files containing URLs")
     parser.add_argument("-v", "--version", action="version", version=__version__)
-    output_group = parser.add_mutually_exclusive_group()
+    output_group: argparse._MutuallyExclusiveGroup = parser.add_mutually_exclusive_group()
     output_group.add_argument("-q", "--quiet", action="store_true", help="suppress yt-dlp output")
     output_group.add_argument("--verbose", action="store_true", help="show yt-dlp debug output")
 
@@ -290,7 +290,13 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dump-json", action="store_true", help="print metadata as JSON")
     parser.add_argument("--skip-download", action="store_true", help="process metadata without downloading media")
 
-    deprecated_options = [
+    deprecated_options: list[
+        tuple[tuple[str], type[DeprecatedAppendAction], None, None, None]
+        | tuple[tuple[str], type[DeprecatedFlagAction], None, None, None]
+        | tuple[tuple[str], type[DeprecatedOptionAction], None, None, type[int]]
+        | tuple[tuple[str], type[DeprecatedOptionAction], None, None, None]
+        | tuple[tuple[str, str], type[DeprecatedOptionAction], None, None, None]
+    ] = [
         (("--write-thumbnail",), DeprecatedFlagAction, None, None, None),
         (("--write-info-json",), DeprecatedFlagAction, None, None, None),
         (("--write-description",), DeprecatedFlagAction, None, None, None),
@@ -351,7 +357,7 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-cmdl_parser = create_parser()
+cmdl_parser: argparse.ArgumentParser = create_parser()
 
 
 def _configure_logging(args: argparse.Namespace) -> None:
@@ -369,18 +375,20 @@ def _configure_logging(args: argparse.Namespace) -> None:
 def main(args: Optional[argparse.Namespace] = None) -> int:
     args = args or cmdl_parser.parse_args()
     if yt_dlp is None:
-        raise DownloadError("yt-dlp is not installed. Run `python -m pip install yt-dlp`.") from _YT_DLP_IMPORT_ERROR
-    urls = _read_inputs(args.input)
+        raise DownloadError(
+            "yt-dlp is not installed. Run `uv pip install yt-dlp` or `uv sync --group dev` in the project repo."
+        ) from _YT_DLP_IMPORT_ERROR
+    urls: list[str] = _read_inputs(args.input)
     if not urls:
         raise DownloadError("No URLs were found in the supplied input.")
-    output_path = Path(args.output).expanduser()
+    output_path: Path = Path(args.output).expanduser()
     output_path.mkdir(parents=True, exist_ok=True)
     logger.debug("Starting download for %d input(s)", len(urls))
     yt_dlp_module: Any = yt_dlp
-    options = build_options(args)
+    options: dict[Any, Any] = build_options(args)
     download_logger = options["logger"]
     try:
-        progress_context = nullcontext() if args.quiet else DownloadProgress()
+        progress_context: DownloadProgress | nullcontext[None] = nullcontext() if args.quiet else DownloadProgress()
         with progress_context as progress:
             if not args.quiet:
                 assert progress is not None
@@ -391,7 +399,7 @@ def main(args: Optional[argparse.Namespace] = None) -> int:
                 logger.debug("Download completed with exit code %d", result)
                 return result
     except yt_dlp_module.utils.DownloadError as error:
-        message = _remove_log_prefix(str(error), "ERROR")
+        message: str = _remove_log_prefix(str(error), "ERROR")
         if not download_logger.error_reported:
             logger.error(message)
         raise DownloadError(message, logged=True) from error
@@ -402,7 +410,7 @@ def execute(*args: str) -> int:
 
 
 def cli() -> None:
-    args = cmdl_parser.parse_args()
+    args: argparse.Namespace = cmdl_parser.parse_args()
     _configure_logging(args)
     try:
         raise SystemExit(main(args))
