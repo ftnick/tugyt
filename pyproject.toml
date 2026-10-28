@@ -19,6 +19,12 @@ dependencies = [
 [project.scripts]
 tugyt = "tugyt.tugyt:cli"
 
+[dependency-groups]
+dev = [
+    "pytest==8.4.2",
+    "flake8==7.3.0",
+]
+
 [tool.setuptools.packages.find]
 include = ["tugyt*"]
 
